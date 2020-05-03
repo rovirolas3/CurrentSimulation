@@ -3,7 +3,7 @@
 
 In this simulation we will detect RFID antennas positioned in an exact position. When the drone it is in range to detect them we will see the RFID antenna in the simulation. When the drone it is not more in range with the RFID antenna, the RFID antenna will disappear in the simulation. 
 
-The code is very similar to the third simulation. You can see the changes in the **commander.py** file. It has been changed to see in a better way the RFID antennas. New entries have been added to **data.yaml**.
+The code is very similar to the third simulation. You can see the changes in the **commander.py** file. It has been changed to see in a better way the RFID antennas. New entries have been added to **data.yaml**. Also in the launch file **final_pythonscripts.launch** has been added the new entry to launch RFID\_publish.py.
 
 There are new files:
 * /catkin\_ws/src/Firmware/RFID\_publish.py: This file creates a new node that will implement the RFID antennas. It will publish into a topic when the drone it is close to them. Also it calculates which it is the antenna of the drone who detects the RFID antenna. 
