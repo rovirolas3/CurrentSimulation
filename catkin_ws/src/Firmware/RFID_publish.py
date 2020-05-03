@@ -67,7 +67,7 @@ class RFIDpublisher:
         self.drone_pitch = 0
         self.drone_yaw = 0
 
-
+        # Variable to know if we had spawn an RFID antenna or not
         global spawned_vehicle_1
         spawned_vehicle_1 = False
         global spawned_vehicle_2
@@ -77,6 +77,7 @@ class RFIDpublisher:
         global spawned_vehicle_4
         spawned_vehicle_4 = False
 
+        # We will use gazebo services to spawn and delete RFID antennas in the simulation
         print("Waiting for gazebo services...")
         rospy.wait_for_service("gazebo/delete_model")
         rospy.wait_for_service("gazebo/spawn_sdf_model")
@@ -84,11 +85,7 @@ class RFIDpublisher:
         self.delete_model = rospy.ServiceProxy("gazebo/delete_model", DeleteModel)
         self.spawn_model = rospy.ServiceProxy("gazebo/spawn_sdf_model", SpawnModel)
 
-
-
-
-        rospy.init_node("rfid_node") # We initialize the node with the name: commander_node
-            
+        rospy.init_node("rfid_node") # We initialize the node with the name: rfid_node
 
         '''
         ros subscribers
@@ -121,28 +118,10 @@ class RFIDpublisher:
         '''
         main ROS thread
         '''
-       
-        self.cur_target_pose_rfid_first = self.construct_target(self.RFID_1_x, self.RFID_1_y, 0, 0) #  
-        self.cur_target_pose_rfid_second = self.construct_target(self.RFID_2_x, self.RFID_2_y, 0, 0) # 
-        self.cur_target_pose_rfid_third = self.construct_target(self.RFID_3_x, self.RFID_3_y, 0, 0) #
-        self.cur_target_pose_rfid_fourth = self.construct_target(self.RFID_4_x, self.RFID_4_y, 0, 0) #        
 
         while rospy.is_shutdown() is False: # While we don't shutdown it, do the loop
-
-            # Must be changed!
-            self.rfid_first_pub.publish(self.cur_target_pose_rfid_first) # Has to be put in the if (Still not implemented in the right position of the code)
-            self.rfid_second_pub.publish(self.cur_target_pose_rfid_second) # 
-            self.rfid_third_pub.publish(self.cur_target_pose_rfid_third) #
-            self.rfid_fourth_pub.publish(self.cur_target_pose_rfid_fourth) # 
-
-            self.cur_target_pose_rfid_first = self.construct_target(self.RFID_1_x, self.RFID_1_y, 0, 0) #  
-            self.cur_target_pose_rfid_second = self.construct_target(self.RFID_2_x, self.RFID_2_y, 0, 0) # 
-            self.cur_target_pose_rfid_third = self.construct_target(self.RFID_3_x, self.RFID_3_y, 0, 0) #
-            self.cur_target_pose_rfid_fourth = self.construct_target(self.RFID_4_x, self.RFID_4_y, 0, 0) #
-  
             
             self.print_RFID_in_range()           
-
 
             time.sleep(0.05) # Rate to publish
 
@@ -162,12 +141,9 @@ class RFIDpublisher:
 
 
 
-
-
-
-    # Function to create the message PositionTarget
+    # Function to create the message PoseStamped
     def construct_target(self, x, y, z, yaw, yaw_rate = 1): 
-        target_raw_pose = PoseStamped() # We will fill the following message with our values: 
+        target_raw_pose = PoseStamped() # We will fill the following message with our values: PoseStamped
         target_raw_pose.header.stamp = rospy.Time.now()
         target_raw_pose.header.frame_id = "RFID"        
 
@@ -195,68 +171,41 @@ class RFIDpublisher:
 
             # Calculates the angle of the RFID antenna and the front perspective of the drone - It takes in account orientation!
             angle = self.calculate_yaw_degree_RFID(self.RFID_1_x,self.RFID_1_y)
-            angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
-
-            print (angle_respect_orientation)
+            angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi) # We substract the value of the orientation
 
             # Depending on the angle it represents one antenna or another
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
 
             # If the RFID antenna it is not in the gazebo simulation, spawn it
             global spawned_vehicle_1
             if spawned_vehicle_1 == False:
              
-                with open(self.sdfpath, "r") as f:
-                    product_xml = f.read()
-
-                orient = Quaternion(0,0,0,0)
-                  
-                item_name   =   "rfid_1"
-                print("Spawning model: ", item_name)
-                item_pose   =   Pose(Point(x=self.RFID_1_x, y=self.RFID_1_y,    z=0.2),   orient)
-                self.spawn_model(item_name, product_xml, "", item_pose, "world")
+                self.spawn_rfid_model(self.RFID_1_x, self.RFID_1_y, 1)
 
                 spawned_vehicle_1 = True
+
+
+            # Publish the location of the RFID antenna into a ROS topic
+            self.cur_target_pose_rfid_first = self.construct_target(self.RFID_1_x, self.RFID_1_y, 0, 0) # Construct the message to put in the topic (PoseStamped)
+            self.rfid_first_pub.publish(self.cur_target_pose_rfid_first) # Publish the topic
+
 
         # If it is NOT in distance
         else: 
             print('RFID antenna 1 NOT in range ' + str(distance))
 
+            # Calculates the angle of the RFID antenna and the front perspective of the drone - It takes in account orientation!
             angle = self.calculate_yaw_degree_RFID(self.RFID_1_x,self.RFID_1_y)
             angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
 
             '''
-            print (angle_respect_orientation)
-            
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
             '''
-           
+            # If the RFID antenna it is in the gazebo simulation, delete it
             global spawned_vehicle_1
             if spawned_vehicle_1 == True:
 
-                item_name = "rfid_1"
-                print("Deleting model: ", item_name)
-                self.delete_model(item_name)
+                self.delete_rfid_model(1)
  
                 spawned_vehicle_1 = False
 
@@ -271,35 +220,17 @@ class RFIDpublisher:
             angle = self.calculate_yaw_degree_RFID(self.RFID_2_x,self.RFID_2_y)
             angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
 
-            print (angle_respect_orientation)
-
-
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
 
             global spawned_vehicle_2
             if spawned_vehicle_2 == False:
 
-                with open(self.sdfpath, "r") as f:
-                    product_xml = f.read()
-
-                orient = Quaternion(0,0,0,0)
-                  
-                item_name   =   "rfid_2"
-                print("Spawning model: ", item_name)
-                item_pose   =   Pose(Point(x=self.RFID_2_x, y=self.RFID_2_y,    z=0.2),   orient)
-                self.spawn_model(item_name, product_xml, "", item_pose, "world")
+                self.spawn_rfid_model(self.RFID_2_x, self.RFID_2_y, 2)
 
                 spawned_vehicle_2 = True
+
+            self.cur_target_pose_rfid_second = self.construct_target(self.RFID_2_x, self.RFID_2_y, 0, 0) 
+            self.rfid_second_pub.publish(self.cur_target_pose_rfid_second) 
 
         else: 
             print('RFID antenna 2 NOT in range ' + str(distance))
@@ -308,27 +239,13 @@ class RFIDpublisher:
             angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
 
             '''
-            print (angle_respect_orientation)
-            
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
             '''
            
             global spawned_vehicle_2
             if spawned_vehicle_2 == True:
 
-                item_name = "rfid_2"
-                print("Deleting model: ", item_name)
-                self.delete_model(item_name)
+                self.delete_rfid_model(2)
  
                 spawned_vehicle_2 = False
 
@@ -342,35 +259,17 @@ class RFIDpublisher:
             angle = self.calculate_yaw_degree_RFID(self.RFID_3_x,self.RFID_3_y)
             angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
 
-            print (angle_respect_orientation)
-
-
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
 
             global spawned_vehicle_3
             if spawned_vehicle_3 == False:
-             
-                with open(self.sdfpath, "r") as f:
-                    product_xml = f.read()
 
-                orient = Quaternion(0,0,0,0)
-                  
-                item_name   =   "rfid_3"
-                print("Spawning model: ", item_name)
-                item_pose   =   Pose(Point(x=self.RFID_3_x, y=self.RFID_3_y,    z=0.2),   orient)
-                self.spawn_model(item_name, product_xml, "", item_pose, "world")
+                self.spawn_rfid_model(self.RFID_3_x, self.RFID_3_y, 3)
 
                 spawned_vehicle_3 = True
+
+            self.cur_target_pose_rfid_third = self.construct_target(self.RFID_3_x, self.RFID_3_y, 0, 0) 
+            self.rfid_third_pub.publish(self.cur_target_pose_rfid_third) 
 
         else: 
             print('RFID antenna 3 NOT in range ' + str(distance))
@@ -379,27 +278,13 @@ class RFIDpublisher:
             angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
 
             '''
-            print (angle_respect_orientation)
-            
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
             '''
            
             global spawned_vehicle_3
             if spawned_vehicle_3 == True:
 
-                item_name = "rfid_3"
-                print("Deleting model: ", item_name)
-                self.delete_model(item_name)
+                self.delete_rfid_model(3)
  
                 spawned_vehicle_3 = False
 
@@ -414,35 +299,17 @@ class RFIDpublisher:
             angle = self.calculate_yaw_degree_RFID(self.RFID_4_x,self.RFID_4_y)
             angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
 
-            print (angle_respect_orientation)
-
-
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
 
             global spawned_vehicle_4
             if spawned_vehicle_4 == False:
-             
-                with open(self.sdfpath, "r") as f:
-                    product_xml = f.read()
 
-                orient = Quaternion(0,0,0,0)
-                  
-                item_name   =   "rfid_4"
-                print("Spawning model: ", item_name)
-                item_pose   =   Pose(Point(x=self.RFID_4_x, y=self.RFID_4_y,    z=0.2),   orient)
-                self.spawn_model(item_name, product_xml, "", item_pose, "world")
+                self.spawn_rfid_model(self.RFID_4_x, self.RFID_4_y, 4)
 
                 spawned_vehicle_4 = True
+
+            self.cur_target_pose_rfid_fourth = self.construct_target(self.RFID_4_x, self.RFID_4_y, 0, 0) 
+            self.rfid_fourth_pub.publish(self.cur_target_pose_rfid_fourth)  
 
         else: 
             print('RFID antenna 4 NOT in range ' + str(distance))
@@ -451,19 +318,7 @@ class RFIDpublisher:
             angle_respect_orientation = angle - (self.drone_yaw * 180 / math.pi)
 
             '''
-            print (angle_respect_orientation)
-            
-            if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
-                print ("Detected by the front antenna")
-
-            elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
-                print ("Detected by the left antenna") 
-
-            elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
-                print ("Detected by the right antenna")
-          
-            else:
-                print ("Detected by the back antenna")
+            self.print_detected_antenna(angle_respect_orientation)
             '''
            
             global spawned_vehicle_4
@@ -495,7 +350,39 @@ class RFIDpublisher:
         return raw_distance
         
 
+    # Function that prints which antenna has detected the RFID
+    def print_detected_antenna(self, angle_respect_orientation):
+        print (angle_respect_orientation)
 
+        if (angle_respect_orientation > -45) and (angle_respect_orientation < 45):
+            print ("Detected by the front antenna")
+
+        elif (angle_respect_orientation > 45) and (angle_respect_orientation < 135):
+            print ("Detected by the left antenna") 
+
+        elif (angle_respect_orientation < -45) and (angle_respect_orientation > -135):
+            print ("Detected by the right antenna")
+        
+        else:
+            print ("Detected by the back antenna")
+
+    # Function that spawn an RFID antenna
+    def spawn_rfid_model(self, RFID_x, RFID_y, number):
+        with open(self.sdfpath, "r") as f:
+            product_xml = f.read()
+
+        orient = Quaternion(0,0,0,0)
+                  
+        item_name   =   "rfid_" + str(number)
+        print("Spawning model: ", item_name)
+        item_pose   =   Pose(Point(x=RFID_x, y=RFID_y,    z=0.2),   orient)
+        self.spawn_model(item_name, product_xml, "", item_pose, "world")
+     
+    # Function that delete an RFID antenna
+    def delete_rfid_model(self, number):
+        item_name = "rfid_"+str(number)
+        print("Deleting model: ", item_name)
+        self.delete_model(item_name)
 
 
 
