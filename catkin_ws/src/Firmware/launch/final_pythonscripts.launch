@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node name="offboard_node" pkg="px4" type="px4_mavros_run.py" />
+    <node name="commander_node" pkg="px4" type="commander.py" />
+    <node name="rfid_node" pkg="px4" type="RFID_publish.py" />
+
+</launch>

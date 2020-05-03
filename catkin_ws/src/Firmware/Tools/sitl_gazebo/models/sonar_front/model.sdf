@@ -1,0 +1,57 @@
+<sdf version="1.4">
+  <model name="sonar_front">
+    <pose>0 0 0.045074 0 -0 0</pose>
+    <link name="link">
+        <inertial>
+        <pose>0 0 0 0 0 0</pose>
+          <mass>0.015</mass>
+          <inertia>
+            <ixx>4.15e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.407e-6</iyy>
+          <iyz>0</iyz>
+          <izz>2.407e-6</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>0.01 0.01 0.01</size>
+            </box>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>0.01 0.01 0.01</size>
+            </box>
+          </geometry>
+        </visual>
+      <sensor name="sonar_front" type="sonar">
+        <pose>0 0 0 -1.5707 -1.5707 1.5707</pose>
+          <sonar>
+            <min>0.02</min>
+            <max>5.0</max>
+            <radius>1.33974388395</radius>
+          </sonar>
+        <plugin name="SonarPlugin" filename="libgazebo_sonar_plugin.so"/>
+        <always_on>1</always_on>
+        <update_rate>20</update_rate>
+        <visualize>true</visualize>
+      </sensor>
+        <self_collide>0</self_collide>
+        <kinematic>0</kinematic>
+    </link>
+  </model>
+</sdf>
