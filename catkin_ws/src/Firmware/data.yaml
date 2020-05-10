@@ -58,15 +58,19 @@ distance_obst_avoid: 0.7
 
 RFID_1_x: 7 
 RFID_1_y: 7
+RFID_1_z: 0.2
  
 RFID_2_x: -7
 RFID_2_y: 7
+RFID_2_z: 0.2
 
 RFID_3_x: -7
 RFID_3_y: -7
+RFID_3_z: 0.2
 
 RFID_4_x: 7
 RFID_4_y: -7
+RFID_4_z: 0.2
 
 # RFID sense distance 
 
@@ -75,6 +79,8 @@ RFID_sens_distance: 5
 # RFID path
 
 sdfpath: "/home/miguel/catkin_ws/src/Firmware/Tools/sitl_gazebo/models/RFID_1/model.sdf"
+sdfredpath: "/home/miguel/catkin_ws/src/Firmware/Tools/sitl_gazebo/models/RFID_2/model.sdf"
+
 
 
 

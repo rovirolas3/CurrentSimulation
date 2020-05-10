@@ -114,18 +114,17 @@ if __name__ == "__main__": # From here to the end we call all the functions in o
     con.takeoff_custom(takeoff_height_value)
     time.sleep(5)
 
-
-    print("Moving one meter in a random direction each 4 seconds")
+    print("Moving half meter in a random direction each 6 seconds")
     con.hover()
     time.sleep(1)
     for x in range(4,0,-1):
         print("Moving in... " + str(x))
         time.sleep(1)
-    print("Total movements: 15")
-    for x in range (15):
+    print("Total movements: 30")
+    for x in range (30):
         print("Movement number " +str(x))
         con.move_randomly()
-        time.sleep(4)
+        time.sleep(6)
 
 
     print("Landing in 5 seconds")
