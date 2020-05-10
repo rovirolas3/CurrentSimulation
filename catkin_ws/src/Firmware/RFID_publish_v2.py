@@ -273,9 +273,9 @@ class RFIDpublisher:
         # Depending which triangle is, the yaw angle is calculated in the following form
         if distance_demored < distance_advanced: 
             if angle < 0:
-                return (-180-angle * 180 / math.pi)
-            else: 
                 return (180-angle * 180 / math.pi)
+            else: 
+                return (-180-angle * 180 / math.pi)
         else:
             return(angle * 180 / math.pi)
 
