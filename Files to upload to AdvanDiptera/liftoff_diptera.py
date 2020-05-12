@@ -12,7 +12,7 @@ import yaml
 class Lift_Off:
 
     def __init__(self):
-        rospy.init_node("Lift_off_node")
+
 
         self.yamlpath = '/home/lybot/AdvanDiptera/src/commanding_node/params/arm_params.yaml'
         with open(self.yamlpath) as f:
@@ -20,12 +20,11 @@ class Lift_Off:
            data = yaml.load(f, Loader=yaml.FullLoader)
            for key, value in data.items():
               if key == "takeoff_height":
-                 takeoff_height = value
+                 self.takeoff_height = value
 
-
+        rospy.init_node("Lift_off_node")
         self.imu_sub = rospy.Subscriber("/mavros/imu/data", Imu, self.imu_callback) 
         self.local_pose_sub = rospy.Subscriber("/mavros/local_position/pose", PoseStamped, self.local_pose_callback) 
-
         self.local_target_pub = rospy.Publisher('mavros/setpoint_raw/local', PositionTarget, queue_size=10)
 
     def imu_callback(self, msg):
@@ -83,8 +82,6 @@ class Lift_Off:
                 print("Waiting for initialization.")
                 time.sleep(0.5)
 
-
-        self.state = "TAKEOFF"
         self.cur_target_pose = self.construct_target(self.local_pose.pose.position.x,
                                                      self.local_pose.pose.position.y,
                                                      self.takeoff_height,
@@ -101,7 +98,8 @@ class Lift_Off:
 
 if __name__ == '__main__':
     takeoff = Lift_Off()
-    takeoff.start 
+    takeoff.start
+    time.sleep(5) 
 
 
 
