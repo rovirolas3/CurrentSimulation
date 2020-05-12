@@ -1,0 +1,7 @@
+current_heading: 0
+initial_x_pos: 0
+initial_y_pos: 0
+initial_z_pos: 0
+threshold_ground_minor: 0.2
+land_height: 0
+takeoff_height: 1.2
