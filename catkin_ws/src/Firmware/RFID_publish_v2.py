@@ -20,19 +20,12 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 from random import random
 
-global front_number
-global back_number
-global left_number
-global right_number
-
-
 class RFIDpublisher:
 
     def __init__(self):
-
-        global yamlpath        
-        yamlpath = '/home/miguel/catkin_ws/src/Firmware/data.yaml'
-        with open(yamlpath) as f:
+       
+        self.yamlpath = '/home/miguel/catkin_ws/src/Firmware/data.yaml'
+        with open(self.yamlpath) as f:
     
            data = yaml.load(f, Loader=yaml.FullLoader)
            for key, value in data.items():
@@ -57,15 +50,11 @@ class RFIDpublisher:
         # Variable to save all the RFID antennas
         self.RFID_List = []
 
-
-        global front_number
-        front_number = 0
-        global back_number
-        back_number = 0
-        global left_number
-        left_number = 0
-        global right_number
-        right_number = 0
+        # Variables that count the number of RFID antennas detected
+        self.front_number = 0
+        self.back_number = 0
+        self.left_number = 0
+        self.right_number = 0
 
 
         # We will use gazebo services to spawn and delete RFID antennas in the simulation
@@ -94,12 +83,6 @@ class RFIDpublisher:
         self.rfid_back_pub = rospy.Publisher('gi/rfid/back', Float32, queue_size=10) # Position of the back RFID antenna
         self.rfid_left_pub = rospy.Publisher('gi/rfid/left', Float32, queue_size=10) # Position of the left RFID antenna
         self.rfid_right_pub = rospy.Publisher('gi/rfid/right', Float32, queue_size=10) # Position of the right RFID antenna
-        '''
-        self.rfid_first_pub = rospy.Publisher('gi/rfid/first', PoseStamped, self.rfid_first_callback) # 
-        self.rfid_second_pub = rospy.Publisher('gi/rfid/second', PoseStamped, self.rfid_second_callback) # 
-        self.rfid_third_pub = rospy.Publisher('gi/rfid/third', PoseStamped, self.rfid_third_callback) #
-        self.rfid_third_pub = rospy.Publisher('gi/rfid/fourth', PoseStamped, self.rfid_fourth_callback) #  
-        '''
 
         print("RFID Antennas Initialized!")
 
@@ -117,12 +100,19 @@ class RFIDpublisher:
             
             self.print_RFID_in_range()           
 
+            # Publish the topic of each antenna
+            self.rfid_front_pub.publish(self.front_number)
+            self.rfid_back_pub.publish(self.back_number)
+            self.rfid_right_pub.publish(self.right_number)
+            self.rfid_left_pub.publish(self.left_number)
+
             time.sleep(0.05) # Rate to publish
 
 
 
     # Callback to catch the position of the drone and the orientation
-    def local_pose_callback(self, msg): 
+    def local_pose_callback(self, msg):
+ 
         self.local_pose = msg
         self.local_enu_position = msg
 
@@ -138,6 +128,7 @@ class RFIDpublisher:
 
     # Function to create the message PoseStamped
     def construct_target(self, x, y, z, yaw, yaw_rate = 1): 
+
         target_raw_pose = PoseStamped() # We will fill the following message with our values: PoseStamped
         target_raw_pose.header.stamp = rospy.Time.now()
         target_raw_pose.header.frame_id = "RFID"        
@@ -178,7 +169,9 @@ class RFIDpublisher:
 
 
     def print_RFID_in_range(self):
+
         #print("Looping")
+
         for RFID_antenna in self.RFID_List:
 
             distance_x_y = self.distance_RFID_and_drone_x_y(RFID_antenna.x, RFID_antenna.y)
@@ -212,24 +205,15 @@ class RFIDpublisher:
                 # If the RFID antenna it is not in red in the gazebo simulation, spawn it and delete the white one
                 if RFID_antenna.spawned_red_mode == False and (detection != "NONE"):
                     
-                    global front_number
-                    global back_number
-                    global left_number
-                    global right_number
-                    
                     # Depending on the antenna we publish a topic with the number of RFID antennas detected by each antenna
                     if detection == "FRONT":
-                        front_number = front_number + 1
-                        self.rfid_front_pub.publish(front_number)
+                        self.front_number = self.front_number + 1
                     elif detection == "BACK":
-                        back_number = back_number + 1
-                        self.rfid_back_pub.publish(back_number)
+                        self.back_number = self.back_number + 1
                     elif detection == "RIGHT":
-                        right_number = right_number + 1
-                        self.rfid_right_pub.publish(right_number)
+                        self.right_number = self.right_number + 1
                     elif detection == "LEFT":
-                        left_number = left_number + 1
-                        self.rfid_left_pub.publish(left_number)
+                        self.left_number = self.left_number + 1
 
 
                     print("CHANGING")
@@ -251,6 +235,7 @@ class RFIDpublisher:
 
     # Function that calculates the angle between the drone and the RFID antenna - yaw
     def calculate_yaw_degree_RFID(self, x, y):
+
         difference_x = x - self.drone_pose_x
         difference_y = y - self.drone_pose_y
       
@@ -258,37 +243,28 @@ class RFIDpublisher:
         
         angle = math.atan(difference_y/difference_x)
         
-        # It calculates a position in front of the drone
-        advanced_positive_x = 3*math.cos(self.drone_yaw)+self.drone_pose_x   
-        advanced_positive_y = 3*math.sin(self.drone_yaw)+self.drone_pose_y
-        # It calculates a position back of the drone
-        advanced_negative_x = -3*math.cos(self.drone_yaw)+self.drone_pose_x
-        advanced_negative_y = -3*math.sin(self.drone_yaw)+self.drone_pose_y
-
-        # It calculates the distance of the RFID antenna with this two positions we have calculated 
-        distance_advanced = math.sqrt(((advanced_positive_x - x)**2)+((advanced_positive_y - y)**2)) 
-        distance_demored = math.sqrt(((advanced_negative_x - x)**2)+((advanced_negative_y - y)**2))
-
-        # Depending on the distance we now know if the yaw angle we have calculated it is in the triangle in front of the drone or in the back
-        # Depending which triangle is, the yaw angle is calculated in the following form
-        if distance_demored < distance_advanced: 
-            if angle < 0:
-                return (180-angle * 180 / math.pi)
-            else: 
-                return (-180-angle * 180 / math.pi)
-        else:
-            return(angle * 180 / math.pi)
+        # Depending in which quadrant the tag is, the final yaw is calculated with the following form 
+        if difference_x > 0 and difference_y > 0:   # First quadrant 
+            return (angle * 180 / math.pi)
+        elif difference_x < 0 and difference_y > 0: # Second quadrant
+            return(180-angle * 180 / math.pi)
+        elif difference_x < 0 and difference_y < 0: # Third quadrant
+            return (-180+angle * 180 / math.pi)
+        else:                                       # Fourth quadrant
+            return (-angle * 180 / math.pi)
 
 
 
     # Function that calculates the angle between the drone and the RFID antenna - pitch
     def calculate_pitch_degree_RFID(self, angle_respect_yaw, distance, z):
+
         difference_x = distance*math.cos(angle_respect_yaw)
         difference_z = z - self.drone_pose_z
       
         difference_hipotenuse = math.sqrt((difference_x**2)+(difference_z**2))
         
         angle = math.atan(abs(difference_z/difference_x))
+
         if z < self.drone_pose_z:
             return(-angle * 180 / math.pi)
         else:
@@ -297,12 +273,14 @@ class RFIDpublisher:
 
     # Function that calculates the angle between the drone and the RFID antenna - roll
     def calculate_roll_degree_RFID(self, angle_respect_yaw, distance, z):
+
         difference_y = distance*math.sin(angle_respect_yaw)
         difference_z = z - self.drone_pose_z
       
         difference_hipotenuse = math.sqrt((difference_y**2)+(difference_z**2))
         
         angle = math.atan(abs(difference_z/difference_y))
+
         if z < self.drone_pose_z:
             return(-angle * 180 / math.pi)
         else:
@@ -312,12 +290,14 @@ class RFIDpublisher:
 
     # Function that calculates the distance between the drone and the RFID antenna in the x/y plane
     def distance_RFID_and_drone_x_y(self, x, y):
+
         raw_distance = math.sqrt(((self.drone_pose_x - x)**2)+((self.drone_pose_y - y)**2))
         return raw_distance
         
 
     # Function that calculates the distance between the drone and the RFID antenna
     def distance_RFID_and_drone(self, x, y, z):
+
         raw_distance = math.sqrt(((self.drone_pose_x - x)**2)+((self.drone_pose_y - y)**2)+((self.drone_pose_z - z)**2))
         return raw_distance
 
@@ -356,6 +336,7 @@ class RFIDpublisher:
 
     # Function that spawn a white RFID antenna
     def spawn_rfid_model(self, RFID_x, RFID_y, RFID_z, number):
+
         with open(self.sdfpath, "r") as f:
             product_xml = f.read()
 
@@ -368,6 +349,7 @@ class RFIDpublisher:
      
     # Function that delete a white RFID antenna
     def delete_rfid_model(self, number):
+
         item_name = "rfid_"+str(number)
         print("Deleting model: ", item_name)
         self.delete_model(item_name)
@@ -375,6 +357,7 @@ class RFIDpublisher:
 
     # Function that spawn a white RFID antenna
     def spawn_rfid_red_model(self, RFID_x, RFID_y, RFID_z, number):
+
         with open(self.sdfredpath, "r") as f:
             product_xml = f.read()
 
@@ -387,6 +370,7 @@ class RFIDpublisher:
      
     # Function that delete a white RFID antenna
     def delete_rfid_red_model(self, number):
+
         item_name = "rfid_red_"+str(number)
         print("Deleting model: ", item_name)
         self.delete_model(item_name)
