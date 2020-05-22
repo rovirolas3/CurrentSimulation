@@ -122,7 +122,6 @@ class Arming_Modechng():
 
 
     def modechnge_takeoff(self):
-        rospy.init_node("liftoff_node")
         if self.flightModeService(custom_mode='AUTO.TAKEOFF'):       # http://wiki.ros.org/mavros/CustomModes
             rospy.loginfo("succesfully changed mode to AUTO.TAKEOFF")
             return True
