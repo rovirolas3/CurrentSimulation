@@ -33,6 +33,7 @@ class Arming_Modechng():
         self.flightModeService = rospy.ServiceProxy('/mavros/set_mode', SetMode)
         self.local_target_pub = rospy.Publisher('mavros/setpoint_raw/local', PositionTarget, queue_size=10)
         self.takeoffService = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
+        self.attitude_target_pub = rospy.Publisher('mavros/setpoint_raw/attitude', AttitudeTarget, queue_size=10)
 
     def q2yaw(self, q):
         if isinstance(q, Quaternion): # Checks if the variable is of the type Quaternion
@@ -93,17 +94,25 @@ class Arming_Modechng():
 
         return target_raw_pose
         
-    def constructCommandTOL(self, x, y, z, yaw, min_pitch = 0):
-        command = CommandTOL()
-        command.min_pitch = min_pitch
-        command.latitude = x
-        command.longitude = y
-        command.altitude = z
-        command.yaw = yaw
-        return command
+    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 6):
+        target_raw_attitude = AttitudeTarget()  # We will fill the following message with our values: http://docs.ros.org/api/mavros_msgs/html/msg/PositionTarget.html
+        target_raw_attitude.header.stamp = rospy.Time.now()
+        #target_raw_attitude.orientation. = self.imu.orientation
+        target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
+                                    + AttitudeTarget.IGNORE_ATTITUDE
+
+        #target_raw_attitude.body_rate.x = body_x # ROLL_RATE
+        #target_raw_attitude.body_rate.y = body_y # PITCH_RATE
+        #target_raw_attitude.body_rate.z = body_z # YAW_RATE
+        target_raw_attitude.thrust = thrust
+        return target_raw_attitude
+    
+    def autotakeoff2(self):
+        self.cur_target_attitude = self.construct_target_attitude()
+        self.attitude_target_pub.publish(self.cur_target_attitude) 
 
     def autotakeoff(self):
-        if (self.takeoffService(self.constructCommandTOL(0, 0, 1.2, self.current_heading))):
+        if (self.takeoffService(min_pitch = 2, latitude = 0, longitude = 0, altitude = 1.2, yaw = self.current_heading)):
             rospy.loginfo("AdvanDiptera is Hovering")
             self.flying_status = "Drone_lifted"
             return True 
