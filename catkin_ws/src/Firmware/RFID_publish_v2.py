@@ -241,7 +241,7 @@ class RFIDpublisher:
       
         difference_hipotenuse = math.sqrt((difference_x**2)+(difference_y**2))
         
-        angle = math.atan(difference_y/difference_x)
+        angle = math.atan(abs(difference_y)/abs(difference_x))
         
         # Depending in which quadrant the tag is, the final yaw is calculated with the following form 
         if difference_x > 0 and difference_y > 0:   # First quadrant 
