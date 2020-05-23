@@ -112,7 +112,7 @@ class Arming_Modechng():
         self.attitude_target_pub.publish(self.cur_target_attitude) 
 
     def autotakeoff(self):
-        if (self.takeoffService(min_pitch = 2, latitude = 0, longitude = 0, altitude = 1.2, yaw = self.current_heading)):
+        if (self.takeoffService(min_pitch = 2, latitude = 41.413414, longitude = 2.190960, altitude = 1.2, yaw = self.current_heading)):
             rospy.loginfo("AdvanDiptera is Hovering")
             self.flying_status = "Drone_lifted"
             return True 
