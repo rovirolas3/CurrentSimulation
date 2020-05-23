@@ -85,7 +85,7 @@ class Arming_Modechng():
 
         return target_raw_pose
         
-    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 6):
+    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 0.2):
         target_raw_attitude = AttitudeTarget()  # We will fill the following message with our values: http://docs.ros.org/api/mavros_msgs/html/msg/PositionTarget.html
         target_raw_attitude.header.stamp = rospy.Time.now()
         #target_raw_attitude.orientation. = self.imu.orientation
@@ -117,20 +117,47 @@ class Arming_Modechng():
     
     
     def thrust_recursion(self, thrust):
-        if (thrust >= 1000):
-            print ("the thrust has reached its desired point")
-            return True
-        else:
-            target_raw_attitude = AttitudeTarget() 
-            target_raw_attitude.header.stamp = rospy.Time.now()
-            target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
-                                    + AttitudeTarget.IGNORE_ATTITUDE
-            target_raw_attitude.thrust = thrust + 6
+        if self.status_thrust == "up":
+            if (thrust >= 1):
+                print ("the thrust has reached its desired point")
+                print ("the motors should start slowing down...")
+                target_raw_attitude = AttitudeTarget() 
+                target_raw_attitude.header.stamp = rospy.Time.now()
+                target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
+                                        + AttitudeTarget.IGNORE_ATTITUDE
+                target_raw_attitude.thrust = 1
+                self.attitude_target_pub.publish(target_raw_attitude)
+                time.sleep(0.1)
+                self.status_thrust == "slow down"
+                return self.thrust_recursion(target_raw_attitude.thrust)
+                
+            else:
+                target_raw_attitude = AttitudeTarget() 
+                target_raw_attitude.header.stamp = rospy.Time.now()
+                target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
+                                        + AttitudeTarget.IGNORE_ATTITUDE
+                target_raw_attitude.thrust = thrust + 0.003
   
-            self.attitude_target_pub.publish(target_raw_attitude)
-            time.sleep(0.1)
-            return thrust_recursion(self, target_raw_attitude.thrust)
-
+                self.attitude_target_pub.publish(target_raw_attitude)
+                time.sleep(0.1)
+                return self.thrust_recursion(target_raw_attitude.thrust)
+        elif self.status_thrust == "slow down":
+            if (thrust <= 0):
+                print ("the motors should stop")
+                self.status_thrust = "stop":
+                return True
+                
+            else:
+                target_raw_attitude = AttitudeTarget() 
+                target_raw_attitude.header.stamp = rospy.Time.now()
+                target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
+                                        + AttitudeTarget.IGNORE_ATTITUDE
+                target_raw_attitude.thrust = thrust - 0.003
+  
+                self.attitude_target_pub.publish(target_raw_attitude)
+                time.sleep(0.1)
+                return self.thrust_recursion(target_raw_attitude.thrust)
+        
         
         
         
@@ -152,7 +179,7 @@ class Arming_Modechng():
             rospy.loginfo("failed to change mode")
             return False        
   
-        
+############################################################ START##################################################        
     def start(self):
         for i in range(10): # Waits 5 seconds for initialization
             if self.current_heading is not None:
@@ -162,27 +189,29 @@ class Arming_Modechng():
                 time.sleep(0.5)
         self.cur_target_pose = self.construct_target(self.init_x, self.init_y, self.init_z, self.current_heading)
         #print ("self.cur_target_pose:", self.cur_target_pose, type(self.cur_target_pose))
-        #self.local_target_pub.publish(self.cur_target_pose)
+        self.local_target_pub.publish(self.cur_target_pose)
         self.arm_state = self.arm()
         self.offboard_state = self.modechnge()
-        #time.sleep(2)
+        time.sleep(2)
         #self.takeoff_state = self.modechnge_takeoff()
         #self.autotakeoff2()
-        #self.local_target_pub.publish(self.cur_target_pose)
+        self.local_target_pub.publish(self.cur_target_pose)
 
-
-        
-
-        for i in range(10):
+        for i in range(20):
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             self.arm_state = self.arm()    # arms the drone
-            self.modechnge_takeoff()
+            #self.modechnge_takeoff()
             self.offboard_state = self.modechnge()
             time.sleep(0.1)
-        #self.autotakeoff()
-        self.thrust_recursion(self, 2)
-'''
-        for i in range(400):
+                
+        self.status_thrust = "up"
+        self.thrust_recursion(0.05)
+        self.arm_state = self.disarm()
+'''        
+        self.autotakeoff2()
+        
+
+        for i in range(100):
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             #self.arm_state = self.arm()    # arms the drone
             #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
