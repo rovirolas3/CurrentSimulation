@@ -144,7 +144,7 @@ class Arming_Modechng():
         elif self.status_thrust == "slow down":
             if (thrust <= 0):
                 print ("the motors should stop")
-                self.status_thrust = "stop":
+                self.status_thrust = "stop"
                 return True
                 
             else:
@@ -210,7 +210,6 @@ class Arming_Modechng():
 '''        
         self.autotakeoff2()
         
-
         for i in range(100):
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             #self.arm_state = self.arm()    # arms the drone
