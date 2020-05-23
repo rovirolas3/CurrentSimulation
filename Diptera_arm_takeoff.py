@@ -94,7 +94,7 @@ class Arming_Modechng():
 
         return target_raw_pose
         
-    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 6):
+    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 1):
         target_raw_attitude = AttitudeTarget()  # We will fill the following message with our values: http://docs.ros.org/api/mavros_msgs/html/msg/PositionTarget.html
         target_raw_attitude.header.stamp = rospy.Time.now()
         #target_raw_attitude.orientation. = self.imu.orientation
@@ -145,12 +145,17 @@ class Arming_Modechng():
         self.takeoff_state = self.modechnge_takeoff()
         self.autotakeoff()
         
+'''      
+        for i in range(20):
+            #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
+            self.attitude_target_pub.publish(self.cur_target_attitude)
+            time.sleep(0.1)
+'''
+        
 '''
         for i in range(10):
-            #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
-            self.arm_state = self.arm()    # arms the drone
-            self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
-            time.sleep(0.2)
+            self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
+            time.sleep(0.1)
 '''
 if __name__ == '__main__':
 
