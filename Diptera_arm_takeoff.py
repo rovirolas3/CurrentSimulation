@@ -66,15 +66,6 @@ class Arming_Modechng():
             rospy.loginfo("Failed to disarm AdvanDiptera")
             return False
 
-    def modechnge(self):
-        #rospy.init_node("offboard_node")
-        if self.flightModeService(custom_mode='OFFBOARD'):
-            rospy.loginfo("succesfully changed mode to OFFBOARD")
-            return True
-        else:
-            rospy.loginfo("failed to change mode")
-            return False
-
     def construct_target(self, x, y, z, yaw, yaw_rate=1):
         target_raw_pose = PositionTarget()  # We will fill the following message with our values: http://docs.ros.org/api/mavros_msgs/html/msg/PositionTarget.html
         target_raw_pose.header.stamp = rospy.Time.now()
@@ -123,8 +114,27 @@ class Arming_Modechng():
         else:
             rospy.loginfo("Failed to takeoff AdvanDiptera")
             return False
+    
+    
+    def thrust_recursion(self, thrust):
+        if (thrust >= 1000):
+            print ("the thrust has reached its desired point")
+            return True
+        else:
+            target_raw_attitude = AttitudeTarget() 
+            target_raw_attitude.header.stamp = rospy.Time.now()
+            target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
+                                    + AttitudeTarget.IGNORE_ATTITUDE
+            target_raw_attitude.thrust = thrust + 6
+  
+            self.attitude_target_pub.publish(target_raw_attitude)
+            time.sleep(0.1)
+            return thrust_recursion(self, target_raw_attitude.thrust)
 
-
+        
+        
+        
+# ----------------------change modes----------------------------
     def modechnge_takeoff(self):
         if self.flightModeService(custom_mode='AUTO.TAKEOFF'):       # http://wiki.ros.org/mavros/CustomModes
             rospy.loginfo("succesfully changed mode to AUTO.TAKEOFF")
@@ -133,6 +143,16 @@ class Arming_Modechng():
             rospy.loginfo("failed to change mode")
             return False
 
+    def modechnge(self):
+        #rospy.init_node("offboard_node")
+        if self.flightModeService(custom_mode='OFFBOARD'):
+            rospy.loginfo("succesfully changed mode to OFFBOARD")
+            return True
+        else:
+            rospy.loginfo("failed to change mode")
+            return False        
+  
+        
     def start(self):
         for i in range(10): # Waits 5 seconds for initialization
             if self.current_heading is not None:
@@ -145,10 +165,10 @@ class Arming_Modechng():
         #self.local_target_pub.publish(self.cur_target_pose)
         self.arm_state = self.arm()
         self.offboard_state = self.modechnge()
-        time.sleep(2)
+        #time.sleep(2)
         #self.takeoff_state = self.modechnge_takeoff()
-        self.autotakeoff2()
-        self.local_target_pub.publish(self.cur_target_pose)
+        #self.autotakeoff2()
+        #self.local_target_pub.publish(self.cur_target_pose)
 
 
         
@@ -156,18 +176,19 @@ class Arming_Modechng():
         for i in range(10):
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             self.arm_state = self.arm()    # arms the drone
-            #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
+            self.modechnge_takeoff()
             self.offboard_state = self.modechnge()
             time.sleep(0.1)
-
-
+        #self.autotakeoff()
+        self.thrust_recursion(self, 2)
+'''
         for i in range(400):
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             #self.arm_state = self.arm()    # arms the drone
             #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
             self.attitude_target_pub.publish(self.cur_target_attitude)
             time.sleep(0.1)
-
+'''
 if __name__ == '__main__':
 
     try:
