@@ -128,7 +128,7 @@ class Arming_Modechng():
                 target_raw_attitude.thrust = 1
                 self.attitude_target_pub.publish(target_raw_attitude)
                 time.sleep(0.1)
-                self.status_thrust == "slow down"
+                self.status_thrust = "slow down"
                 return self.thrust_recursion(target_raw_attitude.thrust)
                 
             else:
