@@ -2,7 +2,7 @@
 
 import rospy
 from mavros_msgs.srv import CommandBool, CommandTOL, SetMode
-from mavros_msgs.msg import GlobalPositionTarget, State, PositionTarget
+from mavros_msgs.msg import GlobalPositionTarget, State, PositionTarget, AttitudeTarget
 from sensor_msgs.msg import Imu, NavSatFix
 from quaternion import Quaternion
 import time
@@ -31,7 +31,7 @@ class Arming_Modechng():
         self.imu_sub = rospy.Subscriber("/mavros/imu/data", Imu,self.imu_callback)
         self.armService = rospy.ServiceProxy('/mavros/cmd/arming', CommandBool)
         self.flightModeService = rospy.ServiceProxy('/mavros/set_mode', SetMode)
-        self.local_target_pub = rospy.Publisher('mavros/setpoint_raw/local', PositionTarget, queue_size=10)
+        self.local_target_pub = rospy.Publisher('/mavros/setpoint_raw/local', PositionTarget, queue_size=10)
         self.takeoffService = rospy.ServiceProxy('/mavros/cmd/takeoff', CommandTOL)
         self.attitude_target_pub = rospy.Publisher('mavros/setpoint_raw/attitude', AttitudeTarget, queue_size=10)
 
@@ -94,7 +94,7 @@ class Arming_Modechng():
 
         return target_raw_pose
         
-    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 1):
+    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 6):
         target_raw_attitude = AttitudeTarget()  # We will fill the following message with our values: http://docs.ros.org/api/mavros_msgs/html/msg/PositionTarget.html
         target_raw_attitude.header.stamp = rospy.Time.now()
         #target_raw_attitude.orientation. = self.imu.orientation
@@ -106,13 +106,17 @@ class Arming_Modechng():
         #target_raw_attitude.body_rate.z = body_z # YAW_RATE
         target_raw_attitude.thrust = thrust
         return target_raw_attitude
+
+    def cb_local_pose(self, msg):
+        self.local_pose = msg
+        self.local_enu_position = msg
     
     def autotakeoff2(self):
         self.cur_target_attitude = self.construct_target_attitude()
         self.attitude_target_pub.publish(self.cur_target_attitude) 
 
     def autotakeoff(self):
-        if (self.takeoffService(min_pitch = 2, latitude = 41.413414, longitude = 2.190960, altitude = 1.2, yaw = self.current_heading)):
+        if (self.takeoffService(min_pitch = 2, latitude = 0, longitude = 0, altitude = 1.2, yaw = self.current_heading)):
             rospy.loginfo("AdvanDiptera is Hovering")
             self.flying_status = "Drone_lifted"
             return True 
@@ -142,21 +146,28 @@ class Arming_Modechng():
         self.arm_state = self.arm()
         self.offboard_state = self.modechnge()
         time.sleep(2)
-        self.takeoff_state = self.modechnge_takeoff()
-        self.autotakeoff()
+        #self.takeoff_state = self.modechnge_takeoff()
+        self.autotakeoff2()
+        self.local_target_pub.publish(self.cur_target_pose)
+
+
         
-'''      
-        for i in range(20):
+
+        for i in range(10):
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
+            self.arm_state = self.arm()    # arms the drone
+            #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
+            self.offboard_state = self.modechnge()
+            time.sleep(0.1)
+
+
+        for i in range(400):
+            #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
+            #self.arm_state = self.arm()    # arms the drone
+            #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
             self.attitude_target_pub.publish(self.cur_target_attitude)
             time.sleep(0.1)
-'''
-        
-'''
-        for i in range(10):
-            self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
-            time.sleep(0.1)
-'''
+
 if __name__ == '__main__':
 
     try:
