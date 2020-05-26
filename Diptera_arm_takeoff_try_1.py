@@ -18,8 +18,6 @@ class Arming_Modechng():
         with open(self.yamlpath) as file:
             data = yaml.load(file)
             for key, value in data.items():
-                #if key == "construct_target":
-                #    self.current_heading = value
                 if key == "initial_x_pos":
                     self.init_x = value
                 if key == "initial_y_pos":
@@ -97,7 +95,31 @@ class Arming_Modechng():
         #target_raw_attitude.body_rate.z = body_z # YAW_RATE
         target_raw_attitude.thrust = thrust
         return target_raw_attitude
-
+ ##############################################################
+    def body_recursion(self, thrust):
+        if self.status_thrust == "up":
+            if (thrust >= 1):
+                return True
+                
+            else:
+                target_raw_attitude = AttitudeTarget() 
+                target_raw_attitude.header.stamp = rospy.Time.now()
+                target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
+                                        + AttitudeTarget.IGNORE_ATTITUDE
+                target_raw_attitude.thrust = thrust 
+                
+                target_raw_attitude.body_rate.x = thrust+0.005 # ROLL_RATE
+                target_raw_attitude.body_rate.y = 0 # PITCH_RATE
+                target_raw_attitude.body_rate.z = 0 # YAW_RATE
+                
+                self.attitude_target_pub.publish(target_raw_attitude)
+                time.sleep(0.1)
+                return self.thrust_recursion(target_raw_attitude.thrust)
+        
+    
+    
+    
+    ############################################################################
     def cb_local_pose(self, msg):
         self.local_pose = msg
         self.local_enu_position = msg
@@ -188,35 +210,30 @@ class Arming_Modechng():
                 print("Waiting for initialization.")
                 time.sleep(0.5)
         self.cur_target_pose = self.construct_target(self.init_x, self.init_y, self.init_z, self.current_heading)
-        #print ("self.cur_target_pose:", self.cur_target_pose, type(self.cur_target_pose))
         self.local_target_pub.publish(self.cur_target_pose)
+        
         self.arm_state = self.arm()
         self.offboard_state = self.modechnge()
         time.sleep(2)
-        #self.takeoff_state = self.modechnge_takeoff()
-        #self.autotakeoff2()
-        self.local_target_pub.publish(self.cur_target_pose)
-
+        self.cur_target_attitude = self.construct_target_attitude()
         for i in range(20):
-            #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
+            
             self.arm_state = self.arm()    # arms the drone
-            #self.modechnge_takeoff()
+            self.attitude_target_pub.publish(self.cur_target_attitude)
             self.offboard_state = self.modechnge()
             time.sleep(0.1)
-                
-        self.status_thrust = "up"
-        self.thrust_recursion(0.05)
-        self.arm_state = self.disarm()
-'''        
-        self.autotakeoff2()
-        
-        for i in range(100):
+
+        for i in range(50):
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             #self.arm_state = self.arm()    # arms the drone
             #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
             self.attitude_target_pub.publish(self.cur_target_attitude)
             time.sleep(0.1)
-'''
+        self.body_recursion(0.003)    
+            
+            
+            
+            
 if __name__ == '__main__':
 
     try:
