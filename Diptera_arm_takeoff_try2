@@ -114,7 +114,18 @@ class Arming_Modechng():
         else:
             rospy.loginfo("Failed to takeoff AdvanDiptera")
             return False
-    
+        
+     def pose_recursion(self, pose):
+        if self.status_thrust == "up":
+            if (pose >= 5):
+                return True 
+            else:
+                self.construct_target(
+                self.cur_target_pose = self.construct_target(pose+0.05, self.init_y, self.init_z, self.current_heading)
+                self.local_target_pub.publish(self.cur_target_pose)    
+                pose = pose+0.05
+                time.sleep(0.1)
+                return self.pose_recursion(pose)   
     
     def thrust_recursion(self, thrust):
         if self.status_thrust == "up":
@@ -193,30 +204,17 @@ class Arming_Modechng():
         self.arm_state = self.arm()
         self.offboard_state = self.modechnge()
         time.sleep(2)
-        #self.takeoff_state = self.modechnge_takeoff()
-        #self.autotakeoff2()
         self.local_target_pub.publish(self.cur_target_pose)
 
         for i in range(20):
-            #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
+            self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             self.arm_state = self.arm()    # arms the drone
-            #self.modechnge_takeoff()
             self.offboard_state = self.modechnge()
             time.sleep(0.1)
                 
         self.status_thrust = "up"
-        self.thrust_recursion(0.05)
-        self.arm_state = self.disarm()
-'''        
-        self.autotakeoff2()
-        
-        for i in range(100):
-            #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
-            #self.arm_state = self.arm()    # arms the drone
-            #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
-            self.attitude_target_pub.publish(self.cur_target_attitude)
-            time.sleep(0.1)
-'''
+        self.pose_recursion(0.05)
+
 if __name__ == '__main__':
 
     try:
