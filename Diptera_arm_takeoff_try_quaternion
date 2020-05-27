@@ -234,6 +234,7 @@ class Arming_Modechng():
             #self.local_target_pub.publish(self.cur_target_pose) # Publish the drone position we initialite during the first 2 seconds
             #self.arm_state = self.arm()    # arms the drone
             #self.offboard_state = self.modechnge() # Calls the function offboard the will select the mode Offboard
+            self.cur_target_attitude = self.construct_target_attitude()
             self.attitude_target_pub.publish(self.cur_target_attitude)
             time.sleep(0.1)
         self.status_thrust = "up"
