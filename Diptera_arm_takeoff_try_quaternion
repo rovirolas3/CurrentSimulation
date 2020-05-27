@@ -43,6 +43,12 @@ class Arming_Modechng():
 
         return rotate_z_rad
 
+    def euler2quaternion(self, roll = 0, pitch = 0, yaw = 0, degrees = True):
+        q = Quaternion.from_euler(roll, pitch, yaw, degrees)
+        return q
+        
+        
+        
     def imu_callback(self, msg):
         global global_imu
         self.imu = msg
@@ -87,15 +93,16 @@ class Arming_Modechng():
     def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust = 0.3):
         target_raw_attitude = AttitudeTarget()  # We will fill the following message with our values: http://docs.ros.org/api/mavros_msgs/html/msg/PositionTarget.html
         target_raw_attitude.header.stamp = rospy.Time.now()
-        #target_raw_attitude.orientation. = self.imu.orientation
-        target_raw_attitude.type_mask = AttitudeTarget.IGNORE_ROLL_RATE + AttitudeTarget.IGNORE_PITCH_RATE + AttitudeTarget.IGNORE_YAW_RATE \
-                                    + AttitudeTarget.IGNORE_ATTITUDE
+        #target_raw_attitude.orientation = self.imu.orientation
+        q = euler2quaternion()
+        target_raw_attitude.orientation = q
 
         target_raw_attitude.body_rate.x = body_x # ROLL_RATE
         target_raw_attitude.body_rate.y = body_y # PITCH_RATE
         target_raw_attitude.body_rate.z = body_z # YAW_RATE
         target_raw_attitude.thrust = thrust
         return target_raw_attitude
+    
  ##############################################################
     def body_recursion(self, thrust):
         if self.status_thrust == "up":
