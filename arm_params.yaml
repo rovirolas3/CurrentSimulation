@@ -1,0 +1,34 @@
+current_heading:
+initial_x_pos: 0
+initial_y_pos: 0
+initial_z_pos: 0
+initial_thrust: 0
+accumulating_thrust: 0.001 #(was 0.0005) 0.5 hover throttle / 0.0005 acc = 1000 loops (now 500loops),1000*0.005 time each loop (200hz)= 0.5sec
+Deaccumulating_thrust: 0.005
+
+
+Hover_sensor_altitude: 1.2
+Hover_sensor_altitude_max: 1.5
+Hover_sensor_altitude_min: 1
+Landing_sensor_altitude_min: 0.5
+
+# We should try from 0.4 at liftoff and giving more time
+Liftoff_thrust: 0.54 # Not tested, 0.54 it is the last value we had in hover during the testing
+Hover_thrust: 0.5 # Not tested, probably 0.5 it is the hovering thrust 
+Landing_thrust: 0.45
+
+
+Time_between_messages: 0.005
+
+Liftoff_time: 4
+Hover_time: 2
+Max_time_landing: 3
+Secure_time_landing: 3
+
+
+
+
+
+
+
+
