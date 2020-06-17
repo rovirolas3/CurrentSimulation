@@ -13,7 +13,7 @@ from sensor_msgs.msg import LaserScan
 
 class Lidar_diptera():
     def __init__(self):
-        self.port = "/dev/ttyUSB1" #linux
+        self.port = "/dev/ttyUSB0" #linux
         self.Obj = PyLidar2.YdLidarX4(self.port) #PyLidar2.your_version_of_lidar(port,chunk_size)
         self.gen = self.Obj.StartScanning()
         rospy.init_node('laser_scan_obstacle_finder')
@@ -68,7 +68,7 @@ class Lidar_diptera():
 
     def forward_obs_det(self,data):
         value = 10000
-        for angle in range(10,80,20):
+        for angle in range(235,305,5): # 225 degrees to 315 degrees
            if (20 < data[angle] ):
                #print("obstacle infront --> move back\n",angle,data[angle])
                if (int(data[angle])/10 < value ):
@@ -80,7 +80,7 @@ class Lidar_diptera():
 
     def backward_obs_det(self,data):
         value = 10000
-        for angle in range(190,260,20):
+        for angle in range(55,125,5): # 45 degrees to 135 degrees
             if (20 < data[angle] ):
                 #print("obstacle back --> move front\n",angle,data[angle])
                 if (int(data[angle])/10 < value ):
@@ -92,7 +92,7 @@ class Lidar_diptera():
 
     def left_obs_det(self,data):
         value = 10000
-        for angle in range(100,170,20):
+        for angle in range(145,215,5): # 135 degrees to 225 degrees
             if (20 < data[angle] ):
                 #print("obstacle back --> move front\n",angle,data[angle])
                 if (int(data[angle])/10 < value ):
@@ -104,7 +104,13 @@ class Lidar_diptera():
 
     def right_obs_det(self,data):
         value = 10000
-        for angle in range(190,350,20):
+        for angle in range(325,355,5): # 315 degrees to 45 degrees, divided in two steps
+            if (20 < data[angle] ):
+                #print("obstacle back --> move front\n",angle,data[angle])
+                if (int(data[angle])/10 < value ):
+                   value = int(data[angle])/10
+
+        for angle in range(5,35,5):
             if (20 < data[angle] ):
                 #print("obstacle back --> move front\n",angle,data[angle])
                 if (int(data[angle])/10 < value ):
@@ -119,7 +125,7 @@ class Lidar_diptera():
             t = time.time()
             while ((time.time() - t) < 1000000):
                 data = self.gen.next()
-                #print data
+                print data
                 self.forward_obs_det(data)
                 self.backward_obs_det(data)
                 self.left_obs_det(data)

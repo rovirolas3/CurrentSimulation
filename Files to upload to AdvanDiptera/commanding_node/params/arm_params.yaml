@@ -17,6 +17,7 @@ Liftoff_thrust: 0.55 # Not tested, 0.54 it is the last value we had in hover dur
 Hover_thrust: 0.54 # Not tested, probably 0.5 it is the hovering thrust 
 Moving_thrust: 0.5
 Landing_thrust: 0.4
+accumulating_thrust_soft: 0.001
 accumulating_thrust: 0.015 #(was 0.0005) 0.5 hover throttle / 0.0005 acc = 1000 loops (now 500loops),1000*0.005 time each loop (200hz)= 0.5sec
 Deaccumulating_thrust: 0.015
 
