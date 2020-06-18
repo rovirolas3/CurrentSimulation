@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+    <node name="sonar" pkg="maxbot_diptera" type="sonarNode.py" ></node>
+</launch>
