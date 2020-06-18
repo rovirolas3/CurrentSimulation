@@ -5,7 +5,7 @@ from mavros_msgs.srv import CommandBool, CommandTOL, SetMode
 from mavros_msgs.msg import GlobalPositionTarget, State, PositionTarget, AttitudeTarget
 from sensor_msgs.msg import Imu, NavSatFix
 from quaternion import Quaternion
-import time
+import time, math
 import yaml
 from gpio_diptera import Rpi_gpio_comm as Gpio_start
 from gpio_clean import Rpi_gpio_comm_off as Gpio_stop
@@ -127,6 +127,19 @@ class Arming_Modechng():
     def calculate_recursions(self, total_time):
 	recursions = total_time/self.Time_between_messages
         return int(recursions)
+
+    def to_quaternion(self, roll=0.0, pitch=0.0, yaw=0.0):
+        t0 = math.cos(math.radians(yaw * 0.5))
+        t1 = math.sin(math.radians(yaw * 0.5))
+        t2 = math.cos(math.radians(roll * 0.5))
+        t3 = math.sin(math.radians(roll * 0.5))
+        t4 = math.cos(math.radians(pitch * 0.5))
+        t5 = math.sin(math.radians(pitch * 0.5))
+        w = t0 * t2 * t4 + t1 * t3 * t5
+        x = t0 * t3 * t4 - t1 * t2 * t5
+        y = t0 * t2 * t5 + t1 * t3 * t4
+        z = t1 * t2 * t4 - t0 * t3 * t5
+        return [w, x, y, z]
 		
 #----------------------arming services----------------------------
     def arm(self):
@@ -166,11 +179,15 @@ class Arming_Modechng():
         return target_raw_pose
     
 
-    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust=0):
+    def construct_target_attitude(self, body_x = 0, body_y = 0, body_z = 0, thrust=0, roll_angle = 0, pitch_angle = 0, yaw_angle = 0):
         target_raw_attitude = AttitudeTarget()  # We will fill the following message with our values: http://docs.ros.org/api/mavros_msgs/html/msg/PositionTarget.html
         target_raw_attitude.header.stamp = rospy.Time.now()
-        target_raw_attitude.orientation = self.imu.orientation
-
+        #target_raw_attitude.orientation = self.imu.orientation
+        q = self.to_quaternion(roll_angle, pitch_angle, yaw_angle)
+        target_raw_attitude.orientation.w = q[0]
+        target_raw_attitude.orientation.x = q[1]
+        target_raw_attitude.orientation.y = q[2]
+        target_raw_attitude.orientation.z = q[3]
         target_raw_attitude.body_rate.x = body_x # ROLL_RATE
         target_raw_attitude.body_rate.y = body_y # PITCH_RATE
         target_raw_attitude.body_rate.z = body_z # YAW_RATE
@@ -243,9 +260,31 @@ class Arming_Modechng():
 
 				
         print ("time of hovering has ended")
+        #self.beh_type = "LANDING"
+        #self.landing_rec()
+        self.moving_forward_rec2(self.Moving_forward_time)
+
+    def moving_forward_rec2(self, time_flying): 
+        recursions = self.calculate_recursions(time_flying)
+        print(recursions)
+        self.beh_type = 'MOVING'
+        angletomove = 0
+	for i in range(recursions):
+            print 'Recursion: ' + str(i) + '   Total Recursions moving: ' + str(recursions)
+            print 'Sonar down distance: ' + str(self.down_sensor_distance) 
+      
+            if self.beh_type == 'MOVING':
+                print("The drone is moving forward")
+                self.beh_type = 'MOVING'
+                thrust = self.Moving_thrust
+                angletomove = angletomove + 0.0025
+                print 'Angle: ' + str(angletomove)
+                self.construct_target_attitude(0,0,0,thrust, angletomove)
+                time.sleep(self.Time_between_messages) #was 0.005   (now 50hz ,500loops)
+				
+        print ("time of hovering has ended")
         self.beh_type = "LANDING"
         self.landing_rec()
-        #self.moving_forward_rec(self.Moving_forward_time)
 
 
     def moving_right_rec(self, time_flying): 
@@ -276,6 +315,10 @@ class Arming_Modechng():
                 thrust = self.Moving_thrust
                 self.construct_target_attitude(angle_roll_right,0,0,thrust + self.Deaccumulating_thrust)
                 time.sleep(self.Time_between_messages) # was 0.005 (now 50hz ,500 loops ,5sec)
+
+        print ("time of hovering has ended")
+        self.beh_type = "LANDING"
+        self.landing_rec()
                 
     def moving_left_rec(self, time_flying): 
         recursions = self.calculate_recursions(time_flying)
@@ -306,6 +349,10 @@ class Arming_Modechng():
                 self.construct_target_attitude(angle_roll_left,0,0,thrust + self.Deaccumulating_thrust)
                 time.sleep(self.Time_between_messages) # was 0.005 (now 50hz ,500 loops ,5sec)
 
+        print ("time of hovering has ended")
+        self.beh_type = "LANDING"
+        self.landing_rec()
+
     def moving_backward_rec(self, time_flying): 
         recursions = self.calculate_recursions(time_flying)
         print(recursions)
@@ -335,6 +382,10 @@ class Arming_Modechng():
                 self.construct_target_attitude(0,self.angle_pitch_back,0,thrust + self.Deaccumulating_thrust)
                 time.sleep(self.Time_between_messages) # was 0.005 (now 50hz ,500 loops ,5sec)
 
+        print ("time of hovering has ended")
+        self.beh_type = "LANDING"
+        self.landing_rec()
+
     def moving_forward_rec(self, time_flying): 
         recursions = self.calculate_recursions(time_flying)
         print(recursions)
@@ -363,8 +414,7 @@ class Arming_Modechng():
                 thrust = self.Moving_thrust
                 self.construct_target_attitude(0,self.angle_pitch_forward,0,thrust + self.Deaccumulating_thrust)
                 time.sleep(self.Time_between_messages) # was 0.005 (now 50hz ,500 loops ,5sec)
-
-				
+			
         print ("time of hovering has ended")
         self.beh_type = "LANDING"
         self.landing_rec()
@@ -474,8 +524,8 @@ class Arming_Modechng():
         self.cur_target_pose = self.construct_target(self.init_x, self.init_y, self.init_z, self.current_heading)
         self.local_target_pub.publish(self.cur_target_pose)
         
-        self.arm_state = self.arm()
-        self.offboard_state = self.modechnge()
+        #self.arm_state = self.arm()
+        #self.offboard_state = self.modechnge()
         time.sleep(2)
         #self.cur_target_attitude = self.construct_target_attitude()
 
@@ -483,7 +533,7 @@ class Arming_Modechng():
         for i in range(20):
             
             self.arm_state = self.arm()    # arms the drone
-            #self.attitude_target_pub.publish(self.cur_target_attitude)
+            self.construct_target_attitude()
             self.offboard_state = self.modechnge()
             time.sleep(0.1)
             
