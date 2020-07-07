@@ -44,8 +44,8 @@ class Arming_Modechng():
                     self.Avoiding_obstacle_distance_min = value
                 if key == "Blocking_movement_distance_min":
                     self.Blocking_movement_distance_min = value
-                if key == "Unblocking_movemente_distance_min":
-                    self.Unblocking_movemente_distance_min = value
+                if key == "Unblocking_movement_distance_min":
+                    self.Unblocking_movement_distance_min = value
 
                 # Thrust
                 if key == "Liftoff_thrust":
@@ -489,7 +489,7 @@ class Arming_Modechng():
                 self.construct_target_attitude(0,0,0,thrust)
                 if self.down_sensor_changed == True:
                     self.down_sensor_changed = False
-                    thrust = thrust + 0.002
+                    thrust = thrust + 0.01
                     self.change_thrusts(thrust, thrust, thrust)
 
             elif self.beh_type == "TAKE OFF" and self.down_sensor_distance >= 0.4 and self.down_sensor_distance <= self.hover_sensor_altitude_min:
@@ -499,11 +499,11 @@ class Arming_Modechng():
                 if self.down_sensor_changed == True:
                     self.down_sensor_changed = False
                     if self.down_sensor_distance_higher == False:
-                        thrust = thrust + 0.002
+                        thrust = thrust + 0.01
                         self.change_thrusts(thrust, thrust, thrust)
 
             elif self.beh_type == "TAKE OFF" and self.down_sensor_distance > self.hover_sensor_altitude_min:
-                self.change_thrusts(thrust + 0.015, thrust, thrust - 0.02)
+                self.change_thrusts(thrust + 0.015, thrust, thrust - 0.01)
             
 
 ################################# HOVER ########################################
