@@ -136,10 +136,10 @@ class keyboard_control():
             print("z is pressed = increasing thrust by",speed)
         elif movement == 'change thrust down':
             print("x is pressed = decreasing thrust by",speed)
-        elif movement == 'land':
+        elif movement == 'Land':
             print("l is pressed = landing")
-        elif movement == 'change thrust down':
-            print("p is pressed = emergency landing)	
+        elif movement == 'Emergency land':
+            print("p is pressed = emergency landing")	
 
     def to_quaternion(self, roll=0.0, pitch=0.0, yaw=0.0):
         t0 = math.cos(math.radians(yaw * 0.5))
@@ -231,9 +231,13 @@ if __name__=="__main__":
                     kb.movement = 'change thrust down'
                     kb.print_movement(kb.movement,kb.acc_thrust)
                 if z == 0.01: # emergency land        p
+                    kb.movement = 'Emergency land'
                     keyboardcontrol_target_pub.publish(String("Emergency land"))
+                    kb.print_movement(kb.movement,kb.acc_thrust)
                 elif z == -0.01: # Land     l
-                    keyboardcontrol_target_pub.publish(String("Land"))		  
+                    kb.movement = 'Land'
+                    keyboardcontrol_target_pub.publish(String("Land"))
+                    kb.print_movement(kb.movement,kb.acc_thrust)		  
                 th = kb.moveBindings[key][3]
                 if th == 0.1: # print our desired thrust       e
                     q = kb.to_quaternion(0, 0, 0)
@@ -282,10 +286,10 @@ if __name__=="__main__":
                     keyboardcontrol_target_pub.publish(String("Controlled"))
                     time.sleep(kb.Time_between_messages) # was 0.005 (now 50hz ,500 loops ,5sec)
 
-            for i in range (4):
-                keyboardcontrol_target_pub.publish(String("No Controlled"))  
-                time.sleep(kb.Time_between_messages) # was 0.005 (now 50hz ,500 loops ,5sec)  
-            kb.timeflying = 0         
+                for i in range (4):
+                    keyboardcontrol_target_pub.publish(String("No Controlled"))  
+                    time.sleep(kb.Time_between_messages) # was 0.005 (now 50hz ,500 loops ,5sec)  
+                kb.timeflying = 0         
             #twist = Twist()
             #twist.linear.x = x*speed; twist.linear.y = y*speed; twist.linear.z = z*speed
             #twist.angular.x = 0; twist.angular.y = 0; twist.angular.z = th*turn

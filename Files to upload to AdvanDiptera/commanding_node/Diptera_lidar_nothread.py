@@ -13,7 +13,7 @@ from sensor_msgs.msg import LaserScan
 
 class Lidar_diptera():
     def __init__(self):
-        self.port = "/dev/ttyUSB0" #linux
+        self.port = "/dev/ttyUSB1" #linux
         self.Obj = PyLidar2.YdLidarX4(self.port) #PyLidar2.your_version_of_lidar(port,chunk_size)
         self.gen = self.Obj.StartScanning()
         rospy.init_node('laser_scan_obstacle_finder')
