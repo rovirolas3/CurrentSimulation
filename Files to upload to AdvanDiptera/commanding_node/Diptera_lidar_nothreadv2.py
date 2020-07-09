@@ -13,7 +13,7 @@ from sensor_msgs.msg import LaserScan
 
 class Lidar_diptera():
     def __init__(self):
-        self.port = "/dev/ttyUSB0" #linux
+        self.port = "/dev/ttyUSB1" #linux
         self.Obj = PyLidar2.YdLidarX4(self.port) #PyLidar2.your_version_of_lidar(port,chunk_size)
         self.gen = self.Obj.StartScanning()
         rospy.init_node('laser_scan_obstacle_finder')
@@ -67,55 +67,74 @@ class Lidar_diptera():
 
 
     def forward_obs_det(self,data):
-        value = 10000
-        for angle in range(235,305,5): # 225 degrees to 315 degrees
-           if (500 < data[angle] ):
+        value = 0
+        count = 0
+        for angle in range(275,285,1): # 225 degrees to 315 degrees
+           if (300 < data[angle] ):
                #print("obstacle infront --> move back\n",angle,data[angle])
-               if (int(data[angle])/10 < value ):
-                   value = int(data[angle])/10
+               value = value + data[angle]
+               count = count + 1
 
+        if value != 0:
+            value = value / count
+        else: 
+            value = 50000
         obstacle_direction_frame = "Front Obstacle"
         obstacle_direction_topic = "/Front_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def backward_obs_det(self,data):
-        value = 10000
-        for angle in range(55,125,5): # 45 degrees to 135 degrees
-            if (500 < data[angle] ):
+        value = 0
+        count = 0
+        for angle in range(85,95,1): # 45 degrees to 135 degrees
+            if (300 < data[angle] ):
                 #print("obstacle back --> move front\n",angle,data[angle])
-                if (int(data[angle])/10 < value ):
-                   value = int(data[angle])/10
-
+               value = value + data[angle]
+               count = count + 1
+        if value != 0:
+            value = value / count
+        else: 
+            value = 50000
         obstacle_direction_frame = "Back Obstacle"
         obstacle_direction_topic = "/Back_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def left_obs_det(self,data):
-        value = 10000
-        for angle in range(145,215,5): # 135 degrees to 225 degrees
-            if (500 < data[angle] ):
+        value = 0
+        count = 0
+        for angle in range(175,185,2): # 135 degrees to 225 degrees
+            if (300 < data[angle] ):
                 #print("obstacle back --> move front\n",angle,data[angle])
-                if (int(data[angle])/10 < value ):
-                   value = int(data[angle])/10
+               value = value + data[angle]
+               count = count + 1
 
+        if value != 0:
+            value = value / count
+        else: 
+            value = 50000
         obstacle_direction_frame = "Left Obstacle"
         obstacle_direction_topic = "/Left_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def right_obs_det(self,data):
-        value = 10000
-        for angle in range(325,355,5): # 315 degrees to 45 degrees, divided in two steps
-            if (500 < data[angle] ):
+        value = 0
+        count = 0
+        for angle in range(355,359,1): # 315 degrees to 45 degrees, divided in two steps
+            if (300 < data[angle] ):
                 #print("obstacle back --> move front\n",angle,data[angle])
-                if (int(data[angle])/10 < value ):
-                   value = int(data[angle])/10
+               value = value + data[angle]
+               count = count + 1
 
-        for angle in range(5,35,5):
-            if (500 < data[angle] ):
+        for angle in range(0,5,1):
+            if (300 < data[angle] ):
                 #print("obstacle back --> move front\n",angle,data[angle])
-                if (int(data[angle])/10 < value ):
-                   value = int(data[angle])/10
+               value = value + data[angle]
+               count = count + 1
 
+        if value != 0:
+            value = value / count
+        else: 
+            value = 50000
         obstacle_direction_frame = "Right Obstacle"
         obstacle_direction_topic = "/Right_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
@@ -125,7 +144,7 @@ class Lidar_diptera():
             t = time.time()
             while ((time.time() - t) < 1000000):
                 data = self.gen.next()
-                print data
+                #print data
                 self.forward_obs_det(data)
                 self.backward_obs_det(data)
                 self.left_obs_det(data)
