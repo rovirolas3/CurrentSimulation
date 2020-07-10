@@ -8,7 +8,7 @@ Hover_sensor_altitude: 1.8
 Hover_sensor_altitude_max: 1.4 # min 2.7 meters last time
 Hover_sensor_altitude_min: 1 # min 2 meters last time
 Landing_sensor_altitude_min: 0.5
-Avoiding_obstacle_distance_min: 500  # in mm
+Avoiding_obstacle_distance_min: 1000  # in mm
 Blocking_movement_distance_min: 300 # in mm
 Unblocking_movement_distance_min: 400 # in mm
 
@@ -18,7 +18,7 @@ Hover_thrust: 0.45 # Last tested, probably 0.54 it is the hovering thrust
 Landing_thrust: 0.45 # 0.52 seems good, probably more it will be better
 Moving_max_thrust: 0.45 # not tested, probably it works
 Moving_min_thrust: 0.45
-Liftoff_thrust_maximum: 0.58
+Liftoff_thrust_maximum: 0.57
 
 accumulating_thrust_soft: 0.001
 accumulating_thrust: 0.015 #(was 0.0005) 0.5 hover throttle / 0.0005 acc = 1000 loops (now 500loops),1000*0.005 time each loop (200hz)= 0.5sec
@@ -33,15 +33,19 @@ Max_time_landing: 5
 Secure_time_landing: 10
 Avoiding_obstacle_time: 0.5
 Keyboard_control_time: 1
-move_desired_direction_time: 1
-move_opposite_direction_time: 0
+move_desired_direction_time: 0.45
+move_opposite_direction_time: 0.05
+move_hover_time: 2
  
-angle_roll_left: 5 # in degrees
-angle_roll_right: -5 # in degrees 
-angle_pitch_back: 5 # in degrees
-angle_pitch_forward: -5 # in degrees 
+angle_roll_left: -7 # in degrees
+angle_roll_right: 7 # in degrees 
+angle_pitch_back: -7 # in degrees
+angle_pitch_forward: 7 # in degrees 
 
-
+angle_roll_left_hard: -7 # in degrees
+angle_roll_right_hard: 7 # in degrees 
+angle_pitch_back_hard: -7 # in degrees
+angle_pitch_forward_hard: 7 # in degrees 
 
 
 
