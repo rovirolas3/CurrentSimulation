@@ -63,7 +63,8 @@ class keyboard_control():
             'z': (0, 0, 0.1, 0),    #change thrust + 
             'x': (0, 0, -0.1, 0),   #change thrust - 
             'p': (0, 0, 0.01, 0),    #skip to emergency land
-            'l': (0, 0, -0.01, 0),   #skip to land 		
+            'l': (0, 0, -0.01, 0),   #skip to land
+            'b': (0, 0, -0.001, 0),   #stop everything  		
             #'O': (1, -1, 0, 0),
             #'I': (1, 0, 0, 0),
             #'J': (0, 1, 0, 0),
@@ -140,6 +141,9 @@ class keyboard_control():
             print("l is pressed = landing")
         elif movement == 'Emergency land':
             print("p is pressed = emergency landing")	
+        elif movement == 'STOP':
+            print("b is pressed = Stop the drone")	
+
 
     def to_quaternion(self, roll=0.0, pitch=0.0, yaw=0.0):
         t0 = math.cos(math.radians(yaw * 0.5))
@@ -230,13 +234,17 @@ if __name__=="__main__":
                     kb.acc_thrust = kb.acc_thrust - 0.1 
                     kb.movement = 'change thrust down'
                     kb.print_movement(kb.movement,kb.acc_thrust)
-                if z == 0.01: # emergency land        p
+                elif z == 0.01: # emergency land        p
                     kb.movement = 'Emergency land'
                     keyboardcontrol_target_pub.publish(String("Emergency land"))
                     kb.print_movement(kb.movement,kb.acc_thrust)
                 elif z == -0.01: # Land     l
                     kb.movement = 'Land'
                     keyboardcontrol_target_pub.publish(String("Land"))
+                    kb.print_movement(kb.movement,kb.acc_thrust)
+                elif z == -0.001: # Land     l
+                    kb.movement = 'STOP'
+                    keyboardcontrol_target_pub.publish(String("Stop"))
                     kb.print_movement(kb.movement,kb.acc_thrust)		  
                 th = kb.moveBindings[key][3]
                 if th == 0.1: # print our desired thrust       e

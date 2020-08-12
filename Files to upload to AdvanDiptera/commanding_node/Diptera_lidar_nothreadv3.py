@@ -24,14 +24,14 @@ class Lidar_diptera():
             self.x_pointcloud.append(0)
             self.y_pointcloud.append(0)
 
-        self.right_distance = 50000
-        self.left_distance = 50000
-        self.front_distance = 50000
-        self.back_distance = 50000
-        self.front_right_distance = 50000
-        self.front_left_distance = 50000
-        self.back_right_distance = 50000
-        self.back_left_distance = 50000
+        self.right_distance = 5000
+        self.left_distance = 5000
+        self.front_distance = 5000
+        self.back_distance = 5000
+        self.front_right_distance = 5000
+        self.front_left_distance = 5000
+        self.back_right_distance = 5000
+        self.back_left_distance = 5000
 
         self.yamlpath = '/home/ubuntu/AdvanDiptera/src/commanding_node/params/arm_params.yaml'
         with open(self.yamlpath) as file:
@@ -40,6 +40,8 @@ class Lidar_diptera():
 
                 if key == "Avoiding_obstacle_distance_min":
                     self.Avoiding_obstacle_distance_min = value
+                if key == "Avoiding_obstacle_distance_hard_min":
+                    self.Avoiding_obstacle_distance_hard_min = value
 
         self.lidar_avoidance_pub = rospy.Publisher('/custom/lidaravoidance', String, queue_size=10) 
 
@@ -86,161 +88,338 @@ class Lidar_diptera():
 
 
     def forward_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(275,285,1): # 225 degrees to 315 degrees
-           if (300 < data[angle] ):
-               #print("obstacle infront --> move back\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
 
-        if value != 0:
-            value = value / count
+        for angle in range(258,278,1): 
+           if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
+
+        for angle in range(272,282,1): 
+           if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
+
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
+
         self.front_distance = value
         obstacle_direction_frame = "Front Obstacle"
         obstacle_direction_topic = "/Front_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def backward_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(85,95,1): # 45 degrees to 135 degrees
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
+
+        for angle in range(78,88,1): 
             if (300 < data[angle] ):
-                #print("obstacle back --> move front\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
-        if value != 0:
-            value = value / count
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
+
+        for angle in range(92,102,1):
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
+
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
+
         self.back_distance = value
         obstacle_direction_frame = "Back Obstacle"
         obstacle_direction_topic = "/Back_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def left_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(175,185,2): # 135 degrees to 225 degrees
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
+        for angle in range(168,178,2):
             if (300 < data[angle] ):
-                #print("obstacle back --> move front\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
 
-        if value != 0:
-            value = value / count
+        for angle in range(182,192,2): 
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
+
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
         self.left_distance = value
         obstacle_direction_frame = "Left Obstacle"
         obstacle_direction_topic = "/Left_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def right_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(355,359,1): # 315 degrees to 45 degrees, divided in two steps
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
+        for angle in range(348,358,1): # 315 degrees to 45 degrees, divided in two steps
             if (300 < data[angle] ):
-                #print("obstacle back --> move front\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
 
-        for angle in range(0,5,1):
+        for angle in range(2,12,1):
             if (300 < data[angle] ):
-                #print("obstacle back --> move front\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
 
-        if value != 0:
-            value = value / count
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
+
         self.right_distance = value
         obstacle_direction_frame = "Right Obstacle"
         obstacle_direction_topic = "/Right_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
 ############################# DIAGONALS ###############################
-
+    
     def forward_right_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(310,320,1): 
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
+        for angle in range(303,313,1): 
            if (300 < data[angle] ):
-               #print("obstacle infront --> move back\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
 
-        if value != 0:
-            value = value / count
+        for angle in range(317,327,1):
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
+
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
+
         self.front_right_distance = value
         obstacle_direction_frame = "Front Right Obstacle"
         obstacle_direction_topic = "/Front_Right_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def forward_left_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(220,230,1): # 45 degrees to 135 degrees
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
+        for angle in range(213,223,1):
             if (300 < data[angle] ):
-                #print("obstacle back --> move front\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
-        if value != 0:
-            value = value / count
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
+
+        for angle in range(227,237,1):
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
+
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
+
         self.front_left_distance = value
         obstacle_direction_frame = "Front Left Obstacle"
         obstacle_direction_topic = "/Front_Left_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def back_right_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(40,50,2): # 135 degrees to 225 degrees
-            if (300 < data[angle] ):
-                #print("obstacle back --> move front\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
 
-        if value != 0:
-            value = value / count
+        for angle in range(33,43,2): 
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
+
+        for angle in range(47,57,1):
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
+
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
+
         self.back_right_distance = value
         obstacle_direction_frame = "Back Right Obstacle"
         obstacle_direction_topic = "/Back_Right_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
 
     def back_left_obs_det(self,data):
-        value = 0
-        count = 0
-        for angle in range(130,140,1): # 315 degrees to 45 degrees, divided in two steps
-            if (300 < data[angle] ):
-                #print("obstacle back --> move front\n",angle,data[angle])
-               value = value + data[angle]
-               count = count + 1
+        value1 = 0
+        count1 = 0
+        value2 = 0
+        count2 = 0
 
-        if value != 0:
-            value = value / count
+        for angle in range(123,133,1): 
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value1 = value1 + 5000
+               else:
+                   value1 = value1 + data[angle]
+               count1 = count1 + 1
+
+        for angle in range(137,147,1):
+            if (300 < data[angle] ):
+               if data[angle] > 5000:
+                   value2 = value2 + 5000
+               else:
+                   value2 = value2 + data[angle]
+               count2 = count2 + 1
+
+        if value1 != 0:
+            value1 = value1 / count1
         else: 
-            value = 50000
+            value1 = 5000
+        if value2 != 0:
+            value2 = value2 / count2
+        else: 
+            value2 = 5000
+
+        if value1 < value2:
+            value = value1
+        else:
+            value = value2
+
         self.back_left_distance = value
         obstacle_direction_frame = "Back Left Obstacle"
         obstacle_direction_topic = "/Back_Left_Obstacle"
         self.lazer_msg_constructor(obstacle_direction_topic,obstacle_direction_frame, np.float_(value) ,angle)
+    
 
-
+############################### AVOIDING OBSTACLE #################################
 
     def point_cloud(self):
         if(self.Obj.Connect()):
             t = time.time()
-            while ((time.time() - t) < 1000000):
+            #while ((time.time() - t) < 1000000):
+            while not rospy.is_shutdown():
                 data = self.gen.next()
                 #print data
                 self.forward_obs_det(data)
@@ -253,49 +432,67 @@ class Lidar_diptera():
                 self.back_left_obs_det(data)
 
                 # DIAGONALS
-                if self.front_right_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Left
-                    self.lidar_avoidance_pub.publish(String("Front Right"))
+                #if self.front_right_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Front/Right
 
-                elif self.front_left_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Right
-                    self.lidar_avoidance_pub.publish(String("Front Left"))
+                    #if self.front_right_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Front Right Hard"))
+                    #else: 
+                #    self.lidar_avoidance_pub.publish(String("Front Right"))                        
 
-                elif self.back_right_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Left
-                    self.lidar_avoidance_pub.publish(String("Back Right"))
+                #elif self.front_left_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Front/Left
+                    #if self.front_left_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Front Left Hard"))
+                    #else:
+                #    self.lidar_avoidance_pub.publish(String("Front Left"))
 
-                elif self.back_left_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Right
-                    self.lidar_avoidance_pub.publish(String("Back Left"))
+                #if self.back_right_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Back/Right
+                    #if self.back_right_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Back Right Hard"))
+                    #else:
+                #    self.lidar_avoidance_pub.publish(String("Back Right"))
 
+                #if self.back_left_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Back/Left
+                    #if self.back_left_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Back Left Hard"))
+                    #else:
+                #    self.lidar_avoidance_pub.publish(String("Back Left"))
 
-
-                # LINEALS
-                elif self.front_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Front
-                    if self.left_distance <= self.Avoiding_obstacle_distance_min:
-                        self.lidar_avoidance_pub.publish(String("Front Left"))
-                    elif self.right_distance <= self.Avoiding_obstacle_distance_min:
-                        self.lidar_avoidance_pub.publish(String("Front Right"))
-                    else:
-                        self.lidar_avoidance_pub.publish(String("Front"))
+                    
+                if self.front_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Front
+                    #if self.front_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Front Hard"))
+                    #else:
+                    self.lidar_avoidance_pub.publish(String("Front"))
 
                 elif self.back_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Back
-                    if self.left_distance <= self.Avoiding_obstacle_distance_min:
-                        self.lidar_avoidance_pub.publish(String("Back Left"))
-                    elif self.right_distance <= self.Avoiding_obstacle_distance_min:
-                        self.lidar_avoidance_pub.publish(String("Back Right"))
-                    else:
-                        self.lidar_avoidance_pub.publish(String("Back"))
+                    #if self.back_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Back Hard"))
+                    #else:
+                    self.lidar_avoidance_pub.publish(String("Back"))
 
                 elif self.left_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Left
+                    #if self.left_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Left Hard"))
+                    #else:
                     self.lidar_avoidance_pub.publish(String("Left"))
 
                 elif self.right_distance <= self.Avoiding_obstacle_distance_min:  # Obstacle Right
+                    #if self.right_distance <= self.Avoiding_obstacle_distance_hard_min:
+                    #    self.lidar_avoidance_pub.publish(String("Right Hard"))
+                    #else:
                     self.lidar_avoidance_pub.publish(String("Right"))
+                    
      
                 # NO OBSTACLE
                 else:
                     self.lidar_avoidance_pub.publish(String("No Obstacle"))
 
                
+if __name__ == '__main__':
+    try:
+        ld = Lidar_diptera()
+        #ld.spin()
+        ld.point_cloud()
 
-ld = Lidar_diptera()
-#ld.spin()
-ld.point_cloud()
+    except rospy.ROSInterruptException: pass
+
